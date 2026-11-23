@@ -11,7 +11,7 @@ The FastAPI backend handles registration, login, password hashing, token validat
 - Login with username or email.
 - Signed JWT access tokens with configurable expiration.
 - Protected endpoints using bearer-token authentication.
-- Role-based access for `user` and `admin accounts.
+- Role-based access for `user` and `admin` accounts.
 - User profile and protected-content views.
 - Admin dashboard for viewing registered users.
 - SQLite database managed through SQLAlchemy.
@@ -57,11 +57,18 @@ The SQLite database (`auth.db`) is created automatically when the application in
 - Python 3.10 or newer
 - Git (optional, for cloning the repository)
 
-### 1. Open the project folder
+### 1. Clone the repository
 
-Open PowerShell in the `Task-2` directory.
+Make sure Git is installed, then open PowerShell or Command Prompt and run:
 
-### 2. Create and activate a virtual environment
+```bash
+git clone https://github.com/saptarsijana8/Datheon_Python_FastAPI_Backend_Development_Internship.git
+cd Datheon_Python_FastAPI_Backend_Development_Internship\Task-2
+```
+
+If you have already cloned the repository, open a terminal in the existing `Task-2` folder instead. To get the latest changes, run `git pull` from the repository folder.
+
+### 3. Create and activate a virtual environment
 
 ```powershell
 python -m venv .venv
@@ -74,7 +81,7 @@ If PowerShell blocks script execution, you can use Command Prompt instead:
 .venv\Scripts\activate.bat
 ```
 
-### 3. Install dependencies
+### 4. Install dependencies
 
 ```powershell
 python -m pip install --upgrade pip
@@ -87,7 +94,7 @@ The main requirements file includes the backend and Streamlit dependencies. The 
 pip install -r frontend/requirements.txt
 ```
 
-### 4. Configure environment variables
+### 5. Configure environment variables
 
 Create your local `.env` file:
 
@@ -103,7 +110,7 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 Copy the generated value into `.env` as the value of `SECRET_KEY`. Keep your `.env` file private and do not commit it to GitHub.
 
-### 5. Create an administrator account
+### 6. Create an administrator account
 
 Run the admin setup script:
 
@@ -113,7 +120,7 @@ python create_admin.py <username> <email> <password>
 
 Replace the placeholders with your chosen credentials. Public registration creates regular user accounts only; administrator accounts are created separately using this script.
 
-### 6. Start the applications
+### 7. Start the applications
 
 Run the backend and frontend in two separate PowerShell terminals. Activate the virtual environment in both terminals.
 
