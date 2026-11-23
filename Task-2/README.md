@@ -1,117 +1,199 @@
-# Authentication + RBAC Mini Project (FastAPI + JWT + Streamlit)
+# User Authentication & Role-Based Access Control
 
-A FastAPI project with user registration, login, JWT access tokens,
-role-based access control (`user` / `admin`), and a **Streamlit** frontend.
+A mini-project that demonstrates secure user authentication and role-based authorization using **FastAPI, JWT, SQLite, and Streamlit**.
 
-## Tech
-- **Backend:** FastAPI + Uvicorn, SQLite + SQLAlchemy 2.x, Pydantic 2.x, python-jose (JWT), passlib[bcrypt]
-- **Frontend:** Streamlit, Requests
+The FastAPI backend handles registration, login, password hashing, token validation, and access control. The Streamlit application provides an interactive interface for users and administrators.
 
-## Windows setup
+## Features
 
-Open **PowerShell** in the `Task-2` folder.
+- User registration with username, email, and password.
+- Password hashing using bcrypt.
+- Login with username or email.
+- Signed JWT access tokens with configurable expiration.
+- Protected endpoints using bearer-token authentication.
+- Role-based access for `user` and `admin accounts.
+- User profile and protected-content views.
+- Admin dashboard for viewing registered users.
+- SQLite database managed through SQLAlchemy.
+- Interactive Streamlit frontend connected to the FastAPI API.
 
-```powershell
-# 1. Create and activate virtual environment
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+## Tech Stack
 
-# If you get an execution policy error, run once:
-# Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+| Component | Technologies |
+|---|---|
+| Backend | Python, FastAPI, Uvicorn |
+| Database | SQLite, SQLAlchemy 2.x |
+| Validation | Pydantic 2.x |
+| Authentication | JWT, python-jose, OAuth2 |
+| Password security | Passlib, bcrypt |
+| Frontend | Streamlit |
+| API communication | Requests |
 
-# 2. Install dependencies
-pip install -r requirements.txt
+## Project Structure
 
-# 3. Configure environment variables
-Copy-Item .env.example .env
-# Open .env and set SECRET_KEY to a long random string. You can generate one with:
-python -c "import secrets; print(secrets.token_hex(32))"
-
-# 4. Create the admin account
-python create_admin.py admin admin@example.com AdminPass123
-
-# 5. Run the app
-uvicorn main:app --reload
+```text
+Task-2/
+├── main.py                  # FastAPI application and API routes
+├── database.py              # Database connection and sessions
+├── models.py                # SQLAlchemy user model
+├── schemas.py               # Pydantic request/response schemas
+├── security.py              # Password hashing and JWT functions
+├── dependencies.py          # Authentication and role dependencies
+├── create_admin.py          # Script for creating an admin account
+├── requirements.txt         # Project dependencies
+├── .env.example             # Environment variable template
+└── frontend/
+    ├── app.py               # Streamlit user interface
+    ├── api.py               # FastAPI request functions
+    └── requirements.txt     # Frontend dependencies
 ```
 
-Open Swagger UI: `http://127.0.0.1:8000/docs`
+The SQLite database (`auth.db`) is created automatically when the application initializes.
 
-### Quick test flow in /docs
-1. `POST /register` — create a normal user.
-2. Click **Authorize** (top right), enter:
-   - **username**: your username (or email)
-   - **password**: your password
-   *(Swagger uses the OAuth2 password flow and calls `POST /login`)*
-3. `GET /users/me` — returns your profile.
-4. `GET /protected` — works for any logged-in user.
-5. `GET /admin` — returns 403 for normal users.
-6. Authorize again with the admin credentials, then:
-   - `GET /admin` — returns a welcome message.
-   - `GET /admin/users` — lists all users (no password hashes exposed).
+## Getting Started
 
-## Endpoints
+### Prerequisites
 
-| Method | Path | Access |
-|---|---|---|
-| `POST` | `/register` | Public |
-| `POST` | `/login` | Public (OAuth2 password form) |
-| `GET` | `/users/me` | Authenticated |
-| `GET` | `/protected` | Authenticated |
-| `GET` | `/admin` | Admin |
-| `GET` | `/admin/users` | Admin |
+- Python 3.10 or newer
+- Git (optional, for cloning the repository)
 
-## Notes
-- Public registration always creates role `user`.
-- To create additional admins, run `python create_admin.py <username> <email> <password>`.
-- Tokens expire after 30 minutes (configurable in `.env`).
-- Passwords are hashed with bcrypt; plain-text passwords are never stored.
+### 1. Open the project folder
 
-## Streamlit Frontend
+Open PowerShell in the `Task-2` directory.
 
-### Install frontend dependencies
+### 2. Create and activate a virtual environment
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks script execution, you can use Command Prompt instead:
+
+```bat
+.venv\Scripts\activate.bat
+```
+
+### 3. Install dependencies
+
+```powershell
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+The main requirements file includes the backend and Streamlit dependencies. The separate frontend requirements file is also available if you want to install the UI dependencies independently:
 
 ```powershell
 pip install -r frontend/requirements.txt
 ```
 
-### Run both applications
+### 4. Configure environment variables
 
-Open **two** PowerShell terminals in the `Task-2` folder (both with venv activated):
+Create your local `.env` file:
 
-**Terminal 1 — FastAPI backend:**
+```powershell
+Copy-Item .env.example .env
+```
+
+Generate a secure secret key:
+
+```powershell
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Copy the generated value into `.env` as the value of `SECRET_KEY`. Keep your `.env` file private and do not commit it to GitHub.
+
+### 5. Create an administrator account
+
+Run the admin setup script:
+
+```powershell
+python create_admin.py <username> <email> <password>
+```
+
+Replace the placeholders with your chosen credentials. Public registration creates regular user accounts only; administrator accounts are created separately using this script.
+
+### 6. Start the applications
+
+Run the backend and frontend in two separate PowerShell terminals. Activate the virtual environment in both terminals.
+
+**Terminal 1 — FastAPI backend**
+
 ```powershell
 uvicorn main:app --reload
 ```
 
-**Terminal 2 — Streamlit frontend:**
+API base URL: http://127.0.0.1:8000
+
+Swagger documentation: http://127.0.0.1:8000/docs
+
+**Terminal 2 — Streamlit frontend**
+
+From the `Task-2` directory, run:
+
 ```powershell
 streamlit run frontend/app.py
 ```
 
-The frontend opens at `http://localhost:8501` and talks to the backend at `http://127.0.0.1:8000`.
+Streamlit interface: http://localhost:8501
 
-### Frontend features
-- **Login page** — authenticate with username/email and password.
-- **Registration page** — create a new user account (always role `user`).
-- **User dashboard** — view profile, fetch protected content, refresh profile.
-- **Admin panel** — view all registered users, verify admin access (admin role only).
-- Automatic logout on expired/invalid tokens.
+Keep the FastAPI server running while using the Streamlit application.
 
-### Project structure
-```
-Task-2/
-├── main.py              # FastAPI app & endpoints
-├── database.py          # SQLAlchemy engine & session
-├── models.py            # User ORM model
-├── schemas.py           # Pydantic request/response schemas
-├── security.py          # JWT & password hashing
-├── dependencies.py      # Auth & RBAC dependencies
-├── create_admin.py      # CLI script to create admin users
-├── requirements.txt     # Backend dependencies
-├── .env.example         # Environment template
-├── .env                 # Active environment config
-└── frontend/
-    ├── app.py           # Streamlit UI
-    ├── api.py           # API client functions
-    └── requirements.txt # Frontend dependencies
-```
+## API Endpoints
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/register` | Public | Register a regular user |
+| `POST` | `/login` | Public | Authenticate and receive a JWT |
+| `GET` | `/users/me` | Authenticated | Get the current user's profile |
+| `GET` | `/protected` | Authenticated | Access protected content |
+| `GET` | `/admin` | Admin | Access the admin-only route |
+| `GET` | `/admin/users` | Admin | View registered users |
+
+## Roles and Permissions
+
+| Feature | User | Admin |
+|---|:---:|:---:|
+| Register an account | Yes | Created separately |
+| Log in | Yes | Yes |
+| View own profile | Yes | Yes |
+| Access protected route | Yes | Yes |
+| Access admin route | No | Yes |
+| View all users | No | Yes |
+
+Authorization is enforced by the FastAPI backend. Hiding admin features in the frontend is only a UI convenience and is not the security mechanism.
+
+## Authentication Flow
+
+1. A user registers through the API or Streamlit interface.
+2. The backend hashes the password and stores the user record in SQLite.
+3. The user logs in with their username or email and password.
+4. FastAPI verifies the credentials and returns a signed JWT access token.
+5. The frontend sends the token in the `Authorization: Bearer <token>` header when calling protected endpoints.
+6. FastAPI validates the token and checks the user's role before granting access.
+
+## Security Notes
+
+- Passwords are stored as bcrypt hashes, never as plain text.
+- JWT signing configuration is loaded from environment variables.
+- Access tokens expire after the configured period (30 minutes by default).
+- Public registration cannot assign the administrator role.
+- Protected routes require a valid bearer token.
+- Admin routes require the authenticated user's database role to be `admin`.
+- The local `.env` file and SQLite database are excluded from version control by `.gitignore`.
+
+## Testing
+
+Use Swagger UI at http://127.0.0.1:8000/docs or the Streamlit interface to verify the application.
+
+Suggested checks:
+
+1. Register a new user and log in.
+2. Open the user profile and protected route.
+3. Try an admin endpoint with a regular user; access should be denied.
+4. Log in with the administrator account and open the admin panel.
+5. Verify that missing, invalid, or expired tokens cannot access protected endpoints.
+
+## Notes
+
+This project is intended for learning and demonstration. It uses a local SQLite database and a simple JWT-based authentication flow; it is not presented as a production-ready identity platform.
