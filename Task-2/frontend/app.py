@@ -31,7 +31,17 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     color: #f5f2ff;
 }
 [data-testid="stHeader"] { background: transparent; }
-.block-container { max-width: 1280px; padding-top: 2.2rem; padding-bottom: 3rem; }
+.block-container { max-width: 1280px; padding-top: 1.2rem; padding-bottom: 2rem; }
+.st-key-auth_panel {
+    max-width: 760px; margin: 1rem auto 0; padding: 1.7rem 2.2rem 1.5rem;
+    background: linear-gradient(145deg,rgba(34,27,48,.94),rgba(13,11,21,.97));
+    border: 1px solid rgba(181,132,235,.62); border-radius: 21px;
+    box-shadow: 0 24px 90px rgba(92,35,170,.18), inset 0 1px rgba(255,255,255,.04);
+}
+.st-key-auth_panel h1, .st-key-auth_panel h2, .st-key-auth_panel h3 { font-size: 1.35rem !important; letter-spacing: -.3px !important; }
+.st-key-auth_panel label, .st-key-auth_panel [data-testid="stMarkdownContainer"] p { font-size: .88rem; }
+.st-key-auth_panel [data-testid="stTextInput"] input { min-height: 42px; font-size: .9rem; }
+.st-key-auth_panel .stButton > button { min-height: 42px; font-size: .92rem; }
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg,#6520c8 0%,#47139c 100%);
 }
@@ -55,23 +65,17 @@ h1 { font-weight: 800 !important; letter-spacing: -1.5px; }
     background: linear-gradient(100deg,#7139ed,#ae4ff0);
     border: 0; color: white;
 }
-.auth-wrap {
-    max-width: 650px; margin: 1.3rem auto 0; padding: 2.3rem 2.5rem;
-    background: linear-gradient(145deg,rgba(34,27,48,.92),rgba(13,11,21,.96));
-    border: 1px solid rgba(181,132,235,.62); border-radius: 22px;
-    box-shadow: 0 24px 90px rgba(92,35,170,.18), inset 0 1px rgba(255,255,255,.04);
-}
-.auth-heading { text-align:center; margin-bottom:1.5rem; }
-.auth-icon { font-size:2.1rem; color:#a96bff; }
+.auth-heading { text-align:center; margin-bottom:1rem; }
+.auth-icon { font-size:1.75rem; color:#a96bff; line-height:1.2; }
 .auth-title {
-    font-size: clamp(2.2rem,5vw,3.6rem); font-weight:800; letter-spacing:-2px;
-    line-height:1.1; background:linear-gradient(90deg,#8150ff,#d06aff);
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:.3rem 0;
+    font-size: clamp(2rem,3.5vw,2.75rem); font-weight:800; letter-spacing:-1.2px;
+    line-height:1.08; background:linear-gradient(90deg,#8150ff,#d06aff);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:.25rem 0;
 }
-.auth-subtitle { color:#b8a9d0; font-size:1.05rem; }
+.auth-subtitle { color:#b8a9d0; font-size:.95rem; }
 .notice {
-    padding: .85rem 1rem; background:#f6f3ff; color:#191326;
-    border-radius:13px; margin:1.2rem 0 1.4rem; font-weight:500;
+    padding: .72rem .9rem; background:#f6f3ff; color:#191326;
+    border-radius:11px; margin:.8rem 0 1rem; font-weight:500; font-size:.88rem;
 }
 .notice span { color:#7540df; font-weight:800; margin-right:.5rem; }
 .panel {
@@ -118,7 +122,9 @@ h1 { font-weight: 800 !important; letter-spacing: -1.5px; }
 div[data-testid="stAlert"] { border-radius:12px; }
 footer { visibility:hidden; }
 @media(max-width:700px) {
- .auth-wrap { padding:1.4rem; margin-top:.4rem; }
+ .st-key-auth_panel { padding:1.25rem 1.1rem 1rem; margin-top:.35rem; }
+ .auth-title { font-size:2rem; }
+ .auth-subtitle { font-size:.85rem; }
  .block-container { padding:1rem; }
  .hero { padding:1.4rem; }
 }
@@ -178,97 +184,141 @@ def auth_header(title, subtitle, icon):
 
 # ---------- Login ----------
 def show_login():
-    st.markdown('<div class="auth-wrap">', unsafe_allow_html=True)
-    auth_header("Auth &amp; RBAC", "Sign in to access your dashboard", "🔒")
-    st.markdown(
-        '<div class="notice"><span>ⓘ</span> Secure authentication with JWT &amp; role-based access control</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("### Login")
-    username = st.text_input("Username or Email", placeholder="Enter your username or email", key="login_user")
-    password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_pass")
-    remember = st.checkbox("Remember me", value=False, help="This demo keeps your login for the current Streamlit session.")
-    left, right = st.columns(2)
-    with left:
-        login_clicked = st.button("Log In", type="primary", use_container_width=True)
-    with right:
-        register_clicked = st.button("Create Account", use_container_width=True)
-    if register_clicked:
-        st.session_state.page = "register"
-        st.rerun()
-    if login_clicked:
-        if not username.strip() or not password:
-            st.error("Please enter both your username/email and password.")
-        else:
-            with st.spinner("Authenticating securely..."):
-                ok, data = api.login_user(username.strip(), password)
-            if ok:
-                token = data.get("access_token")
-                ok_profile, profile = api.get_current_user(token)
-                if ok_profile:
-                    st.session_state.token = token
-                    st.session_state.user = profile
-                    st.session_state.page = "dashboard"
-                    st.session_state.show_token = False
-                    st.rerun()
+    # Keep all widgets inside one real Streamlit container so the card
+    # background, border and spacing wrap the complete form.
+    left, center, right = st.columns([1, 2.25, 1])
+    with center:
+        with st.container(key="auth_panel"):
+            auth_header("Auth &amp; RBAC", "Sign in to access your dashboard", "🔒")
+            st.markdown(
+                '<div class="notice"><span>ⓘ</span> Secure authentication with JWT &amp; role-based access control</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown("### Login")
+            username = st.text_input(
+                "Username or Email",
+                placeholder="Enter your username or email",
+                key="login_user",
+            )
+            password = st.text_input(
+                "Password",
+                type="password",
+                placeholder="Enter your password",
+                key="login_pass",
+            )
+            remember_col, forgot_col = st.columns([1, 1])
+            with remember_col:
+                remember = st.checkbox(
+                    "Remember me",
+                    value=False,
+                    help="This demo keeps your login for the current Streamlit session.",
+                )
+            with forgot_col:
+                st.markdown(
+                    '<p style="text-align:right;color:#a879ff;font-size:.84rem;padding-top:.25rem;">Forgot password?</p>',
+                    unsafe_allow_html=True,
+                )
+            login_col, register_col = st.columns(2)
+            with login_col:
+                login_clicked = st.button("Log In", type="primary", use_container_width=True)
+            with register_col:
+                register_clicked = st.button("Create Account", use_container_width=True)
+
+            if register_clicked:
+                st.session_state.page = "register"
+                st.rerun()
+
+            if login_clicked:
+                if not username.strip() or not password:
+                    st.error("Please enter both your username/email and password.")
                 else:
-                    st.error(f"Login succeeded, but the profile could not be loaded: {profile}")
-            else:
-                st.error(f"Login failed: {data}")
-    st.markdown("</div>", unsafe_allow_html=True)
+                    with st.spinner("Authenticating securely..."):
+                        ok, data = api.login_user(username.strip(), password)
+                    if ok:
+                        token = data.get("access_token")
+                        ok_profile, profile = api.get_current_user(token)
+                        if ok_profile:
+                            st.session_state.token = token
+                            st.session_state.user = profile
+                            st.session_state.page = "dashboard"
+                            st.session_state.show_token = False
+                            st.rerun()
+                        else:
+                            st.error(f"Login succeeded, but the profile could not be loaded: {profile}")
+                    else:
+                        st.error(f"Login failed: {data}")
 
 
 # ---------- Registration ----------
 def show_register():
-    st.markdown('<div class="auth-wrap">', unsafe_allow_html=True)
-    auth_header("Create Account", "Register a new user account", "▤")
-    st.markdown(
-        '<div class="notice"><span>ⓘ</span><b>Registration</b><br/>Please complete all fields to create your account securely.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("### Registration")
-    username = st.text_input("Username", placeholder="At least 3 characters", key="reg_user")
-    email = st.text_input("Email", placeholder="you@example.com", key="reg_email")
-    password = st.text_input("Password", type="password", placeholder="At least 6 characters", key="reg_pass")
-    confirm = st.text_input("Confirm Password", type="password", placeholder="Re-enter your password", key="reg_confirm")
-    if password:
-        score = sum([len(password) >= 8, any(c.isupper() for c in password),
-                     any(c.islower() for c in password), any(c.isdigit() for c in password),
-                     any(not c.isalnum() for c in password)])
-        label = "Weak" if score <= 2 else "Moderate" if score <= 3 else "Strong"
-        st.caption(f"Password strength: {label} ({score}/5)")
-        st.progress(score / 5)
-    st.caption("New public accounts are assigned the standard User role. Admin access is provisioned separately for security.")
-    left, right = st.columns(2)
-    with left:
-        register_clicked = st.button("Register", type="primary", use_container_width=True)
-    with right:
-        back_clicked = st.button("Back to Login", use_container_width=True)
-    if back_clicked:
-        st.session_state.page = "login"
-        st.rerun()
-    if register_clicked:
-        if not all([username.strip(), email.strip(), password, confirm]):
-            st.error("All fields are required.")
-        elif len(username.strip()) < 3:
-            st.error("Username must contain at least 3 characters.")
-        elif len(password) < 6:
-            st.error("Password must contain at least 6 characters.")
-        elif password != confirm:
-            st.error("Passwords do not match.")
-        else:
-            with st.spinner("Creating your account..."):
-                ok, data = api.register_user(username.strip(), email.strip(), password)
-            if ok:
-                st.success(f"Account created for {data.get('username', username)}. You can now log in.")
+    left, center, right = st.columns([1, 2.25, 1])
+    with center:
+        with st.container(key="auth_panel"):
+            auth_header("Create Account", "Register a new user account", "▤")
+            st.markdown(
+                '<div class="notice"><span>ⓘ</span><b>Registration</b> &nbsp; Please complete all fields to create your account securely.</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown("### Registration")
+            username = st.text_input("Username", placeholder="At least 3 characters", key="reg_user")
+            email = st.text_input("Email", placeholder="you@example.com", key="reg_email")
+            password = st.text_input(
+                "Password", type="password",
+                placeholder="At least 6 characters", key="reg_pass",
+            )
+            confirm = st.text_input(
+                "Confirm Password", type="password",
+                placeholder="Re-enter your password", key="reg_confirm",
+            )
+            if password:
+                score = sum([
+                    len(password) >= 8,
+                    any(c.isupper() for c in password),
+                    any(c.islower() for c in password),
+                    any(c.isdigit() for c in password),
+                    any(not c.isalnum() for c in password),
+                ])
+                label = "Weak" if score <= 2 else "Moderate" if score <= 3 else "Strong"
+                st.caption(f"Password strength: {label}")
+                st.progress(score / 5)
+
+            st.caption(
+                "New accounts receive the standard User role. Admin access is provisioned separately."
+            )
+            register_col, back_col = st.columns(2)
+            with register_col:
+                register_clicked = st.button("Register", type="primary", use_container_width=True)
+            with back_col:
+                back_clicked = st.button("Back to Login", use_container_width=True)
+
+            if back_clicked:
                 st.session_state.page = "login"
-            else:
-                st.error(f"Registration failed: {data}")
-    st.markdown(
-        '<p style="text-align:center;color:#988ba9;font-size:.8rem;margin-top:1.2rem;">🔒 Secured with JWT · RBAC access control</p>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+                st.rerun()
+
+            if register_clicked:
+                if not all([username.strip(), email.strip(), password, confirm]):
+                    st.error("All fields are required.")
+                elif len(username.strip()) < 3:
+                    st.error("Username must contain at least 3 characters.")
+                elif len(password) < 6:
+                    st.error("Password must contain at least 6 characters.")
+                elif password != confirm:
+                    st.error("Passwords do not match.")
+                else:
+                    with st.spinner("Creating your account..."):
+                        ok, data = api.register_user(username.strip(), email.strip(), password)
+                    if ok:
+                        st.success(
+                            f"Account created for {data.get('username', username)}. You can now log in."
+                        )
+                        st.session_state.page = "login"
+                    else:
+                        st.error(f"Registration failed: {data}")
+
+            st.markdown(
+                '<p style="text-align:center;color:#988ba9;font-size:.76rem;margin:.8rem 0 0;">🔒 Secured with JWT · RBAC access control</p>',
+                unsafe_allow_html=True,
+            )
 
 
 # ---------- Sidebar ----------
