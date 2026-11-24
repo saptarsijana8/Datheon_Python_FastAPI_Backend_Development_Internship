@@ -1,451 +1,414 @@
 """
-app.py — Streamlit frontend for the FastAPI Auth + RBAC backend.
+Streamlit frontend for the FastAPI JWT Authentication + RBAC project.
 
-Run with:
+Run from the Task-2 directory:
     streamlit run frontend/app.py
 """
 
+import html
+import json
 import streamlit as st
-import api  # our helper module that talks to FastAPI
+import api
 
-# ──────────────────────────────────────────────
-# Page config (must be first Streamlit command)
-# ──────────────────────────────────────────────
 st.set_page_config(
-    page_title="Auth & RBAC Dashboard",
+    page_title="Auth & RBAC",
     page_icon="🔐",
-    layout="centered",
-    initial_sidebar_state="auto",
+    layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
-# ──────────────────────────────────────────────
-# Custom CSS for a modern look
-# ──────────────────────────────────────────────
+# ---------- Theme ----------
 st.markdown("""
 <style>
-/* ---------- colour variables ---------- */
-:root {
-    --primary: #4F46E5;
-    --primary-light: #6366F1;
-    --success: #059669;
-    --danger: #DC2626;
-    --bg-card: #F8FAFC;
-    --border: #E2E8F0;
-    --text-muted: #64748B;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root { color-scheme: dark; }
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+.stApp {
+    background:
+      radial-gradient(ellipse at 8% 8%, rgba(112,45,210,.22), transparent 28%),
+      radial-gradient(ellipse at 92% 78%, rgba(137,54,225,.18), transparent 30%),
+      #080711;
+    color: #f5f2ff;
 }
-
-/* ---------- global tweaks ---------- */
-.block-container { max-width: 860px; padding-top: 2rem; }
-
-/* ---------- reusable card ---------- */
-.card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
+[data-testid="stHeader"] { background: transparent; }
+.block-container { max-width: 1280px; padding-top: 2.2rem; padding-bottom: 3rem; }
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg,#6520c8 0%,#47139c 100%);
 }
-
-/* ---------- hero header ---------- */
+[data-testid="stSidebar"] * { color: white !important; }
+h1,h2,h3,p,label { color: #f6f3ff; }
+h1 { font-weight: 800 !important; letter-spacing: -1.5px; }
+[data-testid="stTextInput"] input {
+    background: rgba(20,17,34,.88); color: #f8f5ff;
+    border: 1px solid #514568; border-radius: 12px; min-height: 48px;
+}
+[data-testid="stTextInput"] input:focus {
+    border-color: #a56aff; box-shadow: 0 0 0 1px #a56aff;
+}
+.stButton > button {
+    border-radius: 12px; min-height: 46px; font-weight: 650;
+    border: 1px solid #8151cb; background: rgba(28,22,44,.9);
+    color: #eee6ff; transition: all .2s ease;
+}
+.stButton > button:hover { border-color: #c08aff; color: white; transform: translateY(-1px); }
+.stButton > button[kind="primary"] {
+    background: linear-gradient(100deg,#7139ed,#ae4ff0);
+    border: 0; color: white;
+}
+.auth-wrap {
+    max-width: 650px; margin: 1.3rem auto 0; padding: 2.3rem 2.5rem;
+    background: linear-gradient(145deg,rgba(34,27,48,.92),rgba(13,11,21,.96));
+    border: 1px solid rgba(181,132,235,.62); border-radius: 22px;
+    box-shadow: 0 24px 90px rgba(92,35,170,.18), inset 0 1px rgba(255,255,255,.04);
+}
+.auth-heading { text-align:center; margin-bottom:1.5rem; }
+.auth-icon { font-size:2.1rem; color:#a96bff; }
+.auth-title {
+    font-size: clamp(2.2rem,5vw,3.6rem); font-weight:800; letter-spacing:-2px;
+    line-height:1.1; background:linear-gradient(90deg,#8150ff,#d06aff);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:.3rem 0;
+}
+.auth-subtitle { color:#b8a9d0; font-size:1.05rem; }
+.notice {
+    padding: .85rem 1rem; background:#f6f3ff; color:#191326;
+    border-radius:13px; margin:1.2rem 0 1.4rem; font-weight:500;
+}
+.notice span { color:#7540df; font-weight:800; margin-right:.5rem; }
+.panel {
+    background:linear-gradient(145deg,rgba(31,25,47,.96),rgba(17,15,27,.98));
+    border:1px solid #392b55; border-radius:20px; padding:1.35rem 1.5rem;
+    min-height:145px; box-shadow:0 12px 35px rgba(0,0,0,.14);
+}
+.panel-label { color:#a99cbe; font-size:.9rem; margin-bottom:.8rem; }
+.panel-value { color:#fff; font-size:1.65rem; font-weight:800; }
+.panel-note { color:#7f7692; font-size:.85rem; margin-top:.45rem; }
 .hero {
-    text-align: center;
-    padding: 2rem 0 1rem;
+    padding:2rem 2.2rem; border-radius:25px;
+    background:linear-gradient(110deg,#7134e5,#a44ef0);
+    box-shadow:0 18px 50px rgba(111,48,210,.22); margin-bottom:1.2rem;
 }
-.hero h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 0.25rem;
+.hero-kicker { letter-spacing:3px; font-size:.8rem; font-weight:800; opacity:.82; }
+.hero h1 { color:white !important; font-size:clamp(1.8rem,4vw,3rem); margin:.4rem 0; }
+.hero p { color:#f1e7ff; margin:0; font-size:1.05rem; }
+.pill {
+    display:inline-block; border-radius:999px; padding:.45rem .85rem;
+    margin:.8rem .35rem 0 0; background:rgba(53,20,112,.45);
+    color:white; font-size:.82rem; font-weight:650;
 }
-.hero p {
-    color: var(--text-muted);
-    font-size: 1.05rem;
+.section-heading { font-size:1.25rem; font-weight:800; margin:1.3rem 0 .8rem; }
+.profile-card {
+    background:#fbfaff; color:#171329; border-radius:20px; padding:1.5rem 1.7rem;
 }
-
-/* ---------- status badges ---------- */
-.badge {
-    display: inline-block;
-    padding: 0.2rem 0.75rem;
-    border-radius: 999px;
-    font-size: 0.82rem;
-    font-weight: 600;
+.profile-card h3 { color:#171329 !important; margin-top:0; }
+.profile-row {
+    display:flex; justify-content:space-between; gap:1rem; padding:.9rem 0;
+    border-bottom:1px solid #ece8f3; color:#77718a;
 }
-.badge-green  { background: #D1FAE5; color: #065F46; }
-.badge-red    { background: #FEE2E2; color: #991B1B; }
-.badge-blue   { background: #DBEAFE; color: #1E40AF; }
-.badge-purple { background: #EDE9FE; color: #5B21B6; }
-
-/* ---------- info row ---------- */
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.95rem;
+.profile-row:last-child { border-bottom:0; }
+.profile-row strong { color:#19152b; text-align:right; overflow-wrap:anywhere; }
+.token-card {
+    background:linear-gradient(145deg,#191525,#11101b);
+    border:1px solid #3b2c55; border-radius:20px; padding:1.5rem;
 }
-.info-row:last-child { border-bottom: none; }
-.info-label { font-weight: 600; color: #334155; }
-.info-value { color: #475569; }
-
-/* ---------- section heading ---------- */
-.section-title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #1E293B;
-    margin: 1.5rem 0 0.75rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 2px solid var(--primary);
-    display: inline-block;
+.token-preview {
+    padding:1rem; margin:.9rem 0; border:1px solid #352b49;
+    background:#211d2d; border-radius:13px; color:#d7c8f2;
+    font-family:monospace; overflow-wrap:anywhere; font-size:.83rem;
 }
-
-/* ---------- sidebar styling ---------- */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #4F46E5 0%, #6366F1 100%);
-}
-section[data-testid="stSidebar"] .stMarkdown h1,
-section[data-testid="stSidebar"] .stMarkdown h2,
-section[data-testid="stSidebar"] .stMarkdown h3,
-section[data-testid="stSidebar"] .stMarkdown p,
-section[data-testid="stSidebar"] .stMarkdown li,
-section[data-testid="stSidebar"] .stMarkdown label {
-    color: white !important;
+div[data-testid="stAlert"] { border-radius:12px; }
+footer { visibility:hidden; }
+@media(max-width:700px) {
+ .auth-wrap { padding:1.4rem; margin-top:.4rem; }
+ .block-container { padding:1rem; }
+ .hero { padding:1.4rem; }
 }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ──────────────────────────────────────────────
-# Session-state helpers
-# ──────────────────────────────────────────────
-def _init_state():
-    """Ensure all keys exist in session_state so we never get KeyError."""
+# ---------- Session state ----------
+def init_state():
     defaults = {
         "token": None,
-        "user": None,           # UserPublic dict from /users/me
-        "page": "login",        # "login" | "register" | "dashboard"
+        "user": None,
+        "page": "login",
+        "dash_tab": "profile",
+        "show_token": False,
+        "admin_users": None,
     }
-    for key, val in defaults.items():
+    for key, value in defaults.items():
         if key not in st.session_state:
-            st.session_state[key] = val
-
-_init_state()
+            st.session_state[key] = value
 
 
-def is_logged_in() -> bool:
-    return st.session_state.token is not None and st.session_state.user is not None
+def is_logged_in():
+    return bool(st.session_state.token and st.session_state.user)
 
 
-def is_admin() -> bool:
+def is_admin():
     return is_logged_in() and st.session_state.user.get("role") == "admin"
 
 
 def logout():
-    st.session_state.token = None
-    st.session_state.user = None
-    st.session_state.page = "login"
+    for key, value in {
+        "token": None, "user": None, "page": "login",
+        "dash_tab": "profile", "show_token": False, "admin_users": None,
+    }.items():
+        st.session_state[key] = value
 
 
-def _refresh_profile():
-    """Re-fetch /users/me. If the token is invalid/expired, log out."""
+def refresh_profile():
     ok, data = api.get_current_user(st.session_state.token)
     if ok:
         st.session_state.user = data
-    else:
-        logout()
-        st.warning("Session expired. Please log in again.")
+        return True
+    logout()
+    return False
 
 
-# ──────────────────────────────────────────────
-# LOGIN PAGE
-# ──────────────────────────────────────────────
+def auth_header(title, subtitle, icon):
+    st.markdown(f"""
+    <div class="auth-heading">
+      <div class="auth-icon">{icon}</div>
+      <div class="auth-title">{title}</div>
+      <div class="auth-subtitle">{subtitle}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ---------- Login ----------
 def show_login():
-    st.markdown("""
-    <div class="hero">
-        <h1>🔐 Auth & RBAC</h1>
-        <p>Sign in to access your dashboard</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    with st.container():
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("Login")
-
-        username = st.text_input("Username or Email", key="login_user", placeholder="Enter your username or email")
-        password = st.text_input("Password", type="password", key="login_pass", placeholder="Enter your password")
-
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            login_btn = st.button("🔑  Log In", use_container_width=True, type="primary")
-        with col2:
-            reg_btn = st.button("📝  Create Account", use_container_width=True)
-
-        if login_btn:
-            if not username or not password:
-                st.error("Please fill in both fields.")
-            else:
-                with st.spinner("Authenticating…"):
-                    ok, data = api.login_user(username, password)
-                if ok:
-                    st.session_state.token = data["access_token"]
-                    # Immediately fetch the full profile
-                    ok2, profile = api.get_current_user(st.session_state.token)
-                    if ok2:
-                        st.session_state.user = profile
-                        st.session_state.page = "dashboard"
-                        st.rerun()
-                    else:
-                        st.error(f"Login succeeded but profile fetch failed: {profile}")
+    st.markdown('<div class="auth-wrap">', unsafe_allow_html=True)
+    auth_header("Auth &amp; RBAC", "Sign in to access your dashboard", "🔒")
+    st.markdown(
+        '<div class="notice"><span>ⓘ</span> Secure authentication with JWT &amp; role-based access control</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("### Login")
+    username = st.text_input("Username or Email", placeholder="Enter your username or email", key="login_user")
+    password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_pass")
+    remember = st.checkbox("Remember me", value=False, help="This demo keeps your login for the current Streamlit session.")
+    left, right = st.columns(2)
+    with left:
+        login_clicked = st.button("Log In", type="primary", use_container_width=True)
+    with right:
+        register_clicked = st.button("Create Account", use_container_width=True)
+    if register_clicked:
+        st.session_state.page = "register"
+        st.rerun()
+    if login_clicked:
+        if not username.strip() or not password:
+            st.error("Please enter both your username/email and password.")
+        else:
+            with st.spinner("Authenticating securely..."):
+                ok, data = api.login_user(username.strip(), password)
+            if ok:
+                token = data.get("access_token")
+                ok_profile, profile = api.get_current_user(token)
+                if ok_profile:
+                    st.session_state.token = token
+                    st.session_state.user = profile
+                    st.session_state.page = "dashboard"
+                    st.session_state.show_token = False
+                    st.rerun()
                 else:
-                    st.error(f"Login failed: {data}")
-
-        if reg_btn:
-            st.session_state.page = "register"
-            st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
+                    st.error(f"Login succeeded, but the profile could not be loaded: {profile}")
+            else:
+                st.error(f"Login failed: {data}")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ──────────────────────────────────────────────
-# REGISTRATION PAGE
-# ──────────────────────────────────────────────
+# ---------- Registration ----------
 def show_register():
-    st.markdown("""
-    <div class="hero">
-        <h1>📝 Create Account</h1>
-        <p>Register a new user account</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    with st.container():
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("Registration")
-
-        username = st.text_input("Username", key="reg_user", placeholder="At least 3 characters")
-        email    = st.text_input("Email", key="reg_email", placeholder="you@example.com")
-        password = st.text_input("Password", type="password", key="reg_pass", placeholder="At least 6 characters")
-        confirm  = st.text_input("Confirm Password", type="password", key="reg_confirm", placeholder="Re-enter your password")
-
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            submit_btn = st.button("✅  Register", use_container_width=True, type="primary")
-        with col2:
-            back_btn = st.button("⬅  Back to Login", use_container_width=True)
-
-        if submit_btn:
-            # client-side validation
-            if not username or not email or not password or not confirm:
-                st.error("All fields are required.")
-            elif len(username) < 3:
-                st.error("Username must be at least 3 characters.")
-            elif len(password) < 6:
-                st.error("Password must be at least 6 characters.")
-            elif password != confirm:
-                st.error("Passwords do not match.")
-            elif "@" not in email:
-                st.error("Please enter a valid email address.")
+    st.markdown('<div class="auth-wrap">', unsafe_allow_html=True)
+    auth_header("Create Account", "Register a new user account", "▤")
+    st.markdown(
+        '<div class="notice"><span>ⓘ</span><b>Registration</b><br/>Please complete all fields to create your account securely.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("### Registration")
+    username = st.text_input("Username", placeholder="At least 3 characters", key="reg_user")
+    email = st.text_input("Email", placeholder="you@example.com", key="reg_email")
+    password = st.text_input("Password", type="password", placeholder="At least 6 characters", key="reg_pass")
+    confirm = st.text_input("Confirm Password", type="password", placeholder="Re-enter your password", key="reg_confirm")
+    if password:
+        score = sum([len(password) >= 8, any(c.isupper() for c in password),
+                     any(c.islower() for c in password), any(c.isdigit() for c in password),
+                     any(not c.isalnum() for c in password)])
+        label = "Weak" if score <= 2 else "Moderate" if score <= 3 else "Strong"
+        st.caption(f"Password strength: {label} ({score}/5)")
+        st.progress(score / 5)
+    st.caption("New public accounts are assigned the standard User role. Admin access is provisioned separately for security.")
+    left, right = st.columns(2)
+    with left:
+        register_clicked = st.button("Register", type="primary", use_container_width=True)
+    with right:
+        back_clicked = st.button("Back to Login", use_container_width=True)
+    if back_clicked:
+        st.session_state.page = "login"
+        st.rerun()
+    if register_clicked:
+        if not all([username.strip(), email.strip(), password, confirm]):
+            st.error("All fields are required.")
+        elif len(username.strip()) < 3:
+            st.error("Username must contain at least 3 characters.")
+        elif len(password) < 6:
+            st.error("Password must contain at least 6 characters.")
+        elif password != confirm:
+            st.error("Passwords do not match.")
+        else:
+            with st.spinner("Creating your account..."):
+                ok, data = api.register_user(username.strip(), email.strip(), password)
+            if ok:
+                st.success(f"Account created for {data.get('username', username)}. You can now log in.")
+                st.session_state.page = "login"
             else:
-                with st.spinner("Creating your account…"):
-                    ok, data = api.register_user(username, email, password)
-                if ok:
-                    st.success(f"Account created for **{data['username']}**! You can now log in.")
-                    st.balloons()
-                else:
-                    st.error(f"Registration failed: {data}")
-
-        if back_btn:
-            st.session_state.page = "login"
-            st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
+                st.error(f"Registration failed: {data}")
+    st.markdown(
+        '<p style="text-align:center;color:#988ba9;font-size:.8rem;margin-top:1.2rem;">🔒 Secured with JWT · RBAC access control</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ──────────────────────────────────────────────
-# SIDEBAR (shown only when logged in)
-# ──────────────────────────────────────────────
+# ---------- Sidebar ----------
 def show_sidebar():
     user = st.session_state.user
     with st.sidebar:
         st.markdown("## 🔐 Auth & RBAC")
+        st.caption("SECURE WORKSPACE")
         st.markdown("---")
-        st.markdown(f"**👤 {user['username']}**")
-        role_emoji = "👑" if user["role"] == "admin" else "🙋"
-        st.markdown(f"{role_emoji} Role: `{user['role']}`")
+        st.markdown(f"### {html.escape(user.get('username', 'User'))}")
+        st.caption(user.get("email", ""))
+        st.markdown(f"**🛡️ {user.get('role', 'user').title()} Role**")
         st.markdown("---")
-
-        st.markdown("### Navigation")
-        if st.button("🏠  Dashboard", use_container_width=True):
+        st.markdown("### NAVIGATION")
+        if st.button("▦  Dashboard", use_container_width=True):
             st.session_state.dash_tab = "profile"
             st.rerun()
-
-        if is_admin():
-            if st.button("⚙️  Admin Panel", use_container_width=True):
-                st.session_state.dash_tab = "admin"
-                st.rerun()
-
+        if is_admin() and st.button("⚙️  Admin Panel", use_container_width=True):
+            st.session_state.dash_tab = "admin"
+            st.rerun()
         st.markdown("---")
-        if st.button("🚪  Logout", use_container_width=True):
+        if st.button("↪  Logout", use_container_width=True):
             logout()
             st.rerun()
 
 
-# ──────────────────────────────────────────────
-# USER DASHBOARD
-# ──────────────────────────────────────────────
-def show_user_dashboard():
+# ---------- Dashboard ----------
+def show_dashboard():
     user = st.session_state.user
-
-    # Welcome banner
+    safe_name = html.escape(str(user.get("username", "User")))
+    safe_email = html.escape(str(user.get("email", "")))
+    role = str(user.get("role", "user"))
+    active = bool(user.get("is_active", False))
     st.markdown(f"""
-    <div class="card" style="background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;text-align:center;">
-        <h2 style="margin:0;color:white;">Welcome back, {user['username']}! 👋</h2>
-        <p style="margin:0.3rem 0 0;opacity:0.9;">Your personal dashboard</p>
+    <div class="hero">
+      <div class="hero-kicker">AUTHENTICATED SESSION</div>
+      <h1>Welcome back, {safe_name}! 👋</h1>
+      <p>Your personal dashboard</p>
+      <span class="pill">✓ JWT verified</span>
+      <span class="pill">✓ RBAC enabled</span>
+      <span class="pill">● Session active</span>
     </div>
     """, unsafe_allow_html=True)
 
-    # Quick metrics
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("User ID", f"#{user['id']}")
-    with col2:
-        role_display = "Admin 👑" if user["role"] == "admin" else "User 🙋"
-        st.metric("Role", role_display)
-    with col3:
-        status_display = "Active ✅" if user["is_active"] else "Inactive ❌"
-        st.metric("Status", status_display)
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f'<div class="panel"><div class="panel-label">User ID</div><div class="panel-value">#{user.get("id", "—")}</div><div class="panel-note">Unique account identifier</div></div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown(f'<div class="panel"><div class="panel-label">Role</div><div class="panel-value">{html.escape(role.title())}</div><div class="panel-note">{"Administrative access" if role == "admin" else "Standard access"}</div></div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown(f'<div class="panel"><div class="panel-label">Status</div><div class="panel-value" style="color:{"#49d6ae" if active else "#ff7777"}">● {"Active" if active else "Inactive"}</div><div class="panel-note">Account standing</div></div>', unsafe_allow_html=True)
 
-    # Profile card
-    st.markdown('<p class="section-title">📋 Profile Details</p>', unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="card">
-        <div class="info-row"><span class="info-label">User ID</span><span class="info-value">#{user['id']}</span></div>
-        <div class="info-row"><span class="info-label">Username</span><span class="info-value">{user['username']}</span></div>
-        <div class="info-row"><span class="info-label">Email</span><span class="info-value">{user['email']}</span></div>
-        <div class="info-row">
-            <span class="info-label">Role</span>
-            <span class="info-value"><span class="badge {'badge-purple' if user['role']=='admin' else 'badge-blue'}">{user['role']}</span></span>
+    st.markdown('<div class="section-heading">Account overview</div>', unsafe_allow_html=True)
+    left, right = st.columns([1.35, 1])
+    with left:
+        st.markdown(f"""
+        <div class="profile-card">
+          <h3>Profile Details <span style="float:right;color:#7540df;font-size:.8rem;">✓ Verified</span></h3>
+          <div class="profile-row"><span>User ID</span><strong>#{user.get("id", "—")}</strong></div>
+          <div class="profile-row"><span>Username</span><strong>{safe_name}</strong></div>
+          <div class="profile-row"><span>Email</span><strong>{safe_email}</strong></div>
+          <div class="profile-row"><span>Role</span><strong>{html.escape(role.title())}</strong></div>
+          <div class="profile-row"><span>Account Status</span><strong>{"Active" if active else "Inactive"}</strong></div>
+          <div class="profile-row"><span>Authentication</span><strong>Authenticated ✓</strong></div>
         </div>
-        <div class="info-row">
-            <span class="info-label">Account Status</span>
-            <span class="info-value"><span class="badge {'badge-green' if user['is_active'] else 'badge-red'}">{'Active' if user['is_active'] else 'Inactive'}</span></span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Authentication</span>
-            <span class="info-value"><span class="badge badge-green">Authenticated ✓</span></span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    with right:
+        token = st.session_state.token or ""
+        preview = token if st.session_state.show_token else (token[:28] + "..." + token[-12:] if len(token) > 45 else "•" * 24)
+        st.markdown("""
+        <div class="token-card">
+          <h3>🔑 JWT Access Token</h3>
+          <p style="color:#a79bb9;font-size:.9rem;">Token issued by the FastAPI backend for this authenticated session.</p>
+        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="token-preview">{html.escape(preview)}</div>', unsafe_allow_html=True)
+        t1, t2 = st.columns(2)
+        with t1:
+            if st.button("Show / Hide Token", use_container_width=True):
+                st.session_state.show_token = not st.session_state.show_token
+                st.rerun()
+        with t2:
+            if st.button("Copy Token", use_container_width=True):
+                st.code(token, language=None)
+                st.info("Select and copy the token above. Avoid sharing it with anyone.")
+        with st.expander("View token payload"):
+            try:
+                import base64
+                payload_part = token.split(".")[1]
+                payload_part += "=" * (-len(payload_part) % 4)
+                payload = json.loads(base64.urlsafe_b64decode(payload_part.encode()).decode())
+                st.json(payload)
+            except Exception:
+                st.caption("The token payload could not be decoded in the browser.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # Actions
-    st.markdown('<p class="section-title">⚡ Actions</p>', unsafe_allow_html=True)
-    col_a, col_b = st.columns(2)
-
-    with col_a:
-        if st.button("🔒  Fetch Protected Content", use_container_width=True, type="primary"):
-            with st.spinner("Requesting…"):
-                ok, data = api.get_protected(st.session_state.token)
+    st.markdown('<div class="section-heading">Quick actions</div>', unsafe_allow_html=True)
+    a, b, c = st.columns(3)
+    with a:
+        if st.button("🔒  Test Protected Route", type="primary", use_container_width=True):
+            ok, data = api.get_protected(st.session_state.token)
             if ok:
                 st.success(data.get("message", str(data)))
             else:
-                if "credentials" in str(data).lower() or "expired" in str(data).lower():
-                    logout()
-                    st.warning("Session expired. Redirecting to login…")
-                    st.rerun()
-                else:
-                    st.error(data)
-
-    with col_b:
-        if st.button("🔄  Refresh Profile", use_container_width=True):
-            with st.spinner("Refreshing…"):
-                _refresh_profile()
-            if is_logged_in():
+                st.error(data)
+    with b:
+        if st.button("↻  Refresh Profile", use_container_width=True):
+            if refresh_profile():
                 st.success("Profile refreshed.")
                 st.rerun()
+            st.warning("Your session expired. Please log in again.")
+            st.rerun()
+    with c:
+        if st.button("↪  Logout", use_container_width=True):
+            logout()
+            st.rerun()
 
-
-# ──────────────────────────────────────────────
-# ADMIN DASHBOARD
-# ──────────────────────────────────────────────
-def show_admin_dashboard():
-    user = st.session_state.user
-    token = st.session_state.token
-
-    st.markdown(f"""
-    <div class="card" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);color:white;text-align:center;">
-        <h2 style="margin:0;color:white;">Admin Panel 👑</h2>
-        <p style="margin:0.3rem 0 0;opacity:0.9;">Welcome, {user['username']} — you have full administrative access.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Fetch admin greeting from backend
-    st.markdown('<p class="section-title">🛡️ Admin Verification</p>', unsafe_allow_html=True)
-    if st.button("📡  Verify Admin Access", use_container_width=True):
-        with st.spinner("Checking…"):
-            ok, data = api.get_admin(token)
-        if ok:
-            st.success(data.get("message", str(data)))
-        else:
-            st.error(data)
-
-    # Users table
-    st.markdown('<p class="section-title">👥 Registered Users</p>', unsafe_allow_html=True)
-
-    if st.button("🔄  Load / Refresh Users", use_container_width=True, type="primary"):
-        with st.spinner("Fetching user list…"):
-            ok, data = api.get_all_users(token)
-        if ok:
-            st.session_state["admin_users"] = data
-        else:
-            if "privileges" in str(data).lower():
-                st.error("Your account does not have admin privileges.")
+    if is_admin():
+        st.markdown('<div class="section-heading">Administrator tools</div>', unsafe_allow_html=True)
+        if st.button("Verify Admin Access"):
+            ok, data = api.get_admin(st.session_state.token)
+            st.success(data.get("message", str(data))) if ok else st.error(data)
+        if st.button("Load Registered Users"):
+            ok, data = api.get_all_users(st.session_state.token)
+            if ok:
+                st.session_state.admin_users = data
             else:
                 st.error(data)
-
-    users_data = st.session_state.get("admin_users")
-    if users_data:
-        st.metric("Total Users", len(users_data))
-
-        # Build a clean table
-        import pandas as pd
-        df = pd.DataFrame(users_data)
-        df = df[["id", "username", "email", "role", "is_active"]]
-        df.columns = ["ID", "Username", "Email", "Role", "Active"]
-        df["Active"] = df["Active"].map({True: "✅ Yes", False: "❌ No"})
-        df["Role"]   = df["Role"].apply(lambda r: f"👑 {r}" if r == "admin" else f"🙋 {r}")
-
-        st.dataframe(df, use_container_width=True, hide_index=True)
-    else:
-        st.info("Click **Load / Refresh Users** to fetch the user list from the backend.")
+        if st.session_state.admin_users is not None:
+            st.dataframe(st.session_state.admin_users, use_container_width=True, hide_index=True)
 
 
-# ──────────────────────────────────────────────
-# MAIN ROUTER
-# ──────────────────────────────────────────────
 def main():
-    # If logged in, show sidebar + dashboard
+    init_state()
     if is_logged_in():
         show_sidebar()
-
-        # Determine which tab to show
-        if "dash_tab" not in st.session_state:
-            st.session_state.dash_tab = "profile"
-
-        tab = st.session_state.dash_tab
-
-        if tab == "admin" and is_admin():
-            show_admin_dashboard()
-        elif tab == "admin" and not is_admin():
-            st.error("You do not have admin privileges.")
-            show_user_dashboard()
-        else:
-            show_user_dashboard()
-
+        show_dashboard()
+    elif st.session_state.page == "register":
+        show_register()
     else:
-        # Not logged in — show login or register
-        page = st.session_state.page
-        if page == "register":
-            show_register()
-        else:
-            show_login()
+        show_login()
 
 
 if __name__ == "__main__":
