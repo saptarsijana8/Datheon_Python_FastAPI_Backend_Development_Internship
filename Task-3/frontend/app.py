@@ -73,6 +73,8 @@ section[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="tru
 [data-testid="stDataFrame"] {border: 1px solid #E7EAF0; border-radius: 12px; overflow: hidden;}
 h1, h2, h3 {letter-spacing: -.025em;}
 
+"""
+
 
 @dataclass
 class Ctx:
