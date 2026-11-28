@@ -27,40 +27,51 @@ SORT_NOTES = ["Newest first", "Oldest first", "Recently edited", "Title A–Z"]
 
 # Colours are semi-transparent greys so the design works in both light and dark mode.
 CSS = """
-.block-container {max-width: 1200px; padding-top: 2rem;}
+.stApp {background: #F8FAFC; color: #172033;}
+.block-container {max-width: 1220px; padding-top: 2rem; padding-bottom: 3rem;}
 footer {visibility: hidden;}
-.hero {background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 55%, #EC4899 100%); color: #fff;
-  padding: 1.8rem 2.2rem; border-radius: 20px; margin-bottom: 1.4rem; box-shadow: 0 10px 30px rgba(99,102,241,.28);}
-.hero h1 {color: #fff !important; margin: 0; padding: 0; font-size: 2.1rem;}
-.hero p {margin: .4rem 0 0; opacity: .92; font-size: 1.05rem;}
-.stat {display: flex; align-items: center; gap: 1rem; padding: 1.1rem 1.3rem; border-radius: 16px;
-  background: rgba(127,127,127,.08); border: 1px solid rgba(127,127,127,.2);}
-.stat-icon {width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem;}
-.stat-value {font-size: 1.9rem; font-weight: 800; line-height: 1.1;}
-.stat-label {opacity: .7; font-size: .9rem;}
-[class*="st-key-card_"] {border: 1px solid rgba(127,127,127,.25); border-radius: 16px; padding: 1rem 1.15rem;
-  background: rgba(127,127,127,.06); transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;}
-[class*="st-key-card_"]:hover {transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,.14); border-color: #6366F1;}
-.accent {height: 5px; border-radius: 99px; margin-bottom: .8rem;}
-.note-title {font-size: 1.12rem; font-weight: 700; margin-bottom: .35rem; word-break: break-word;}
-.note-body {opacity: .85; line-height: 1.5; margin-bottom: .8rem; word-break: break-word;}
-.muted {opacity: .5; font-style: italic;}
-.note-meta {display: flex; align-items: center; gap: .45rem; font-size: .82rem; opacity: .8; flex-wrap: wrap;}
+header[data-testid="stHeader"] {background: rgba(248,250,252,.92);}
+section[data-testid="stSidebar"] {background: #FFFFFF; border-right: 1px solid #E7EAF0;}
+section[data-testid="stSidebar"] > div {padding-top: 1.5rem;}
+section[data-testid="stSidebar"] [data-testid="stRadio"] label {font-size: .94rem; font-weight: 550;}
+section[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] {gap: .35rem;}
+section[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"] {color: #4F46E5;}
+.hero {background: #FFFFFF; color: #172033; padding: 1.65rem 1.9rem; border: 1px solid #E7EAF0;
+  border-radius: 16px; margin-bottom: 1.35rem; box-shadow: 0 2px 8px rgba(15,23,42,.035);}
+.hero h1 {color: #172033 !important; margin: 0; padding: 0; font-size: 1.9rem; font-weight: 750; letter-spacing: -.035em;}
+.hero p {color: #64748B; margin: .45rem 0 0; font-size: .96rem;}
+.stat {display: flex; align-items: center; gap: .95rem; padding: 1.1rem 1.2rem; border-radius: 14px;
+  background: #FFFFFF; border: 1px solid #E7EAF0; box-shadow: 0 2px 8px rgba(15,23,42,.025);}
+.stat-icon {width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;}
+.stat-value {font-size: 1.8rem; font-weight: 750; line-height: 1.15; color: #172033;}
+.stat-label {color: #64748B; font-size: .86rem; margin-top: .2rem;}
+[class*="st-key-card_"] {border: 1px solid #E7EAF0; border-radius: 14px; padding: 1rem 1.1rem;
+  background: #FFFFFF; box-shadow: 0 2px 8px rgba(15,23,42,.025); transition: border-color .15s ease, box-shadow .15s ease;}
+[class*="st-key-card_"]:hover {box-shadow: 0 5px 16px rgba(15,23,42,.06); border-color: #C7D2FE;}
+.accent {height: 3px; border-radius: 99px; margin-bottom: .9rem;}
+.note-title {font-size: 1.04rem; font-weight: 700; color: #172033; margin-bottom: .4rem; word-break: break-word;}
+.note-body {color: #475569; line-height: 1.55; margin-bottom: .85rem; word-break: break-word; font-size: .93rem;}
+.muted {color: #94A3B8; font-style: italic;}
+.note-meta {display: flex; align-items: center; gap: .45rem; font-size: .8rem; color: #64748B; flex-wrap: wrap;}
 .avatar {border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink: 0;}
-.badge {background: rgba(99,102,241,.16); color: #6366F1; padding: 2px 10px; border-radius: 999px; font-size: .75rem; font-weight: 700;}
-.user-head {display: flex; align-items: center; gap: .8rem; margin-bottom: .7rem;}
-.user-name {font-weight: 700; font-size: 1.1rem;}
-.user-sub {opacity: .65; font-size: .85rem; word-break: break-all;}
-.empty {text-align: center; padding: 2.6rem 1rem; border: 2px dashed rgba(127,127,127,.35); border-radius: 18px; margin: .5rem 0 1rem;}
-.empty .big {font-size: 2.6rem;}
-.empty .title {font-size: 1.15rem; font-weight: 700; margin-top: .3rem;}
-.empty .sub {opacity: .65;}
-.brand {font-size: 1.35rem; font-weight: 800; margin-bottom: .8rem;}
-.status {display: inline-flex; align-items: center; gap: .45rem; font-size: .82rem; padding: 3px 12px; border-radius: 999px; background: rgba(16,185,129,.15); color: #10B981; font-weight: 600;}
-.status::before {content: ""; width: 8px; height: 8px; border-radius: 50%; background: #10B981;}
-.stButton > button, .stLinkButton > a {border-radius: 10px; font-weight: 600; transition: transform .1s ease;}
-.stButton > button:hover {transform: translateY(-1px);}
-"""
+.badge {background: #EEF2FF; color: #4F46E5; padding: 3px 9px; border-radius: 999px; font-size: .72rem; font-weight: 650;}
+.user-head {display: flex; align-items: center; gap: .8rem; margin-bottom: .75rem;}
+.user-name {font-weight: 700; font-size: 1.02rem; color: #172033;}
+.user-sub {color: #64748B; font-size: .82rem; word-break: break-all;}
+.empty {text-align: center; padding: 2.5rem 1rem; background: #FFFFFF; border: 1px dashed #CBD5E1; border-radius: 16px; margin: .5rem 0 1rem;}
+.empty .big {font-size: 2.35rem;}
+.empty .title {font-size: 1.08rem; font-weight: 700; color: #172033; margin-top: .35rem;}
+.empty .sub {color: #64748B; font-size: .9rem;}
+.brand {font-size: 1.25rem; font-weight: 800; color: #172033; margin-bottom: 1rem; letter-spacing: -.025em;}
+.status {display: inline-flex; align-items: center; gap: .45rem; font-size: .8rem; padding: 4px 10px; border-radius: 999px; background: #ECFDF5; color: #047857; font-weight: 650;}
+.status::before {content: ""; width: 7px; height: 7px; border-radius: 50%; background: #10B981;}
+.stButton > button, .stLinkButton > a {border-radius: 9px; font-weight: 600; border-color: #E2E8F0; transition: background .15s ease, border-color .15s ease;}
+.stButton > button:hover {border-color: #A5B4FC; color: #4338CA;}
+.stButton > button[kind="primary"] {background: #4F46E5; border-color: #4F46E5; color: #FFFFFF;}
+.stButton > button[kind="primary"]:hover {background: #4338CA; border-color: #4338CA; color: #FFFFFF;}
+[data-testid="stMetric"] {background: #FFFFFF; border: 1px solid #E7EAF0; padding: .8rem 1rem; border-radius: 12px;}
+[data-testid="stDataFrame"] {border: 1px solid #E7EAF0; border-radius: 12px; overflow: hidden;}
+h1, h2, h3 {letter-spacing: -.025em;}
 
 
 @dataclass
