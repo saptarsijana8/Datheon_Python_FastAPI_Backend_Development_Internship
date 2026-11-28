@@ -1,0 +1,25 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Local database files (created when the backend starts)
+*.db
+*.sqlite3
+*.db-journal
+
+# Secrets and local configuration
+.env
+.streamlit/secrets.toml
+
+# IDE / OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
