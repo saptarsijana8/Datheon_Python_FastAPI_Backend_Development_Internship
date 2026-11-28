@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import contains_eager
 
 from app import schemas
 from app.models import Note, User
@@ -44,9 +44,16 @@ async def get_user(db: AsyncSession, user_id: int) -> User | None:
 
 
 async def get_user_with_notes(db: AsyncSession, user_id: int) -> User | None:
-    """Fetch a user and their notes with one extra SELECT (selectinload), not one per note."""
-    stmt = select(User).options(selectinload(User.notes)).where(User.id == user_id)
-    return (await db.execute(stmt)).scalar_one_or_none()
+    """Fetch a user and notes with a LEFT OUTER JOIN, including users with no notes."""
+    stmt = (
+        select(User)
+        .outerjoin(User.notes)
+        .options(contains_eager(User.notes))
+        .where(User.id == user_id)
+        .order_by(Note.id)
+    )
+    result = await db.execute(stmt)
+    return result.unique().scalar_one_or_none()
 
 
 # ---------- Notes ----------

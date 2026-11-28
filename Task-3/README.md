@@ -101,7 +101,7 @@ Everything is run from the **project root** (the folder that contains `requireme
 
 ```
 database-persistence/
-├── .github/workflows/tests.yml   # GitHub Actions: runs the tests on every push
+├── .github/workflows/task-3-tests.yml # GitHub Actions workflow (repository root)
 ├── .streamlit/config.toml        # Streamlit theme and settings
 ├── backend/
 │   ├── app/
@@ -167,8 +167,10 @@ users (1) ───────────< notes (many)
 - **One user has many notes**, and **each note belongs to exactly one user**.
 - In SQL this is the `notes.user_id` foreign key pointing at `users.id`.
 - In SQLAlchemy it is two linked attributes: `User.notes` (a list) and `Note.user` (a single user).
-- `GET /users/{id}` uses `selectinload(User.notes)` to fetch a user and all their notes in two
-  queries total, instead of one query per note.
+- `GET /users/{id}` uses an explicit SQL `LEFT OUTER JOIN` with `contains_eager(User.notes)`.
+  This returns the user and their notes in one joined query while still including users who have no notes.
+- The query calls `unique()` because a JOIN returns one result row per related note; SQLAlchemy then
+  assembles those rows into one user object with its notes collection.
 - SQLite does **not** enforce foreign keys by default. `database.py` runs `PRAGMA foreign_keys=ON`
   on every new connection, so the database rejects a note whose `user_id` does not exist.
 - Deleting a user deletes their notes (cascade). The API has no "delete user" endpoint, but the
@@ -476,7 +478,7 @@ python -c "import sqlite3; c = sqlite3.connect('backend/notes.db'); print(c.exec
 
 The repository is already prepared: `.gitignore` keeps your virtual environment, caches, `.env`
 files and the local `notes.db` out of Git, `.gitattributes` keeps line endings consistent, and
-`.github/workflows/tests.yml` runs the test suite on every push (Python 3.11 and 3.12).
+`.github/workflows/task-3-tests.yml` runs the Task-3 test suite when Task-3 files change (Python 3.11 and 3.12).
 
 1. Create an **empty** repository on GitHub (no README, no .gitignore, no license).
 2. In the project root:
